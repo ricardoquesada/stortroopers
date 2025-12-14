@@ -11,7 +11,7 @@ Stortrooper Editor is a pixel art character creator tool. It allows users to com
 
 ## Screenshot
 
-![Stortrooper Editor Interface](editor_screenshot.png)
+![Stortrooper Editor Interface](docs/editor_screenshot.png)
 
 ## Getting Started
 
