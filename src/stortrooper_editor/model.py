@@ -34,6 +34,7 @@ class CharacterData:
         self.root_path = os.path.join(res_path, name)
         self.articles_filename = articles_filename
         self.articles: List[Article] = []
+        self.articles_by_id: Dict[str, Article] = {}
         self.categories: Dict[str, List[Article]] = {}
         # Default layer order based on config.txt observation, can be refined
         self.layer_order = [
@@ -128,6 +129,7 @@ class CharacterData:
                     )
 
                     self.articles.append(article)
+                    self.articles_by_id[article.id] = article
 
                     if category not in self.categories:
                         self.categories[category] = []
@@ -137,3 +139,6 @@ class CharacterData:
 
     def get_article_z_index(self, article: Article) -> int:
         return self.layer_z_index.get(article.layer_name, 0)
+
+    def get_article_by_id(self, article_id: str) -> Article:
+        return self.articles_by_id.get(article_id)

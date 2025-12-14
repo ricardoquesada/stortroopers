@@ -1,5 +1,6 @@
 # Copyright (c) 2025 Ricardo Quesada
 
+import json
 import os
 
 from PySide6.QtCore import QRectF, QSize, Qt
@@ -131,6 +132,9 @@ class MainWindow(QMainWindow):
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
         main_layout = QHBoxLayout(central_widget)
+
+        # Menu Bar
+        self.create_menu_bar()
 
         # Left Panel: Controls
         left_panel = QWidget()
@@ -333,6 +337,129 @@ class MainWindow(QMainWindow):
         self.canvas.set_zoom(self.current_zoom)
 
     def zoom_out(self):
-        if self.current_zoom > 0.5:
-            self.current_zoom -= 0.5
-            self.canvas.set_zoom(self.current_zoom)
+        self.current_zoom -= 0.5
+        self.canvas.set_zoom(self.current_zoom)
+
+    def create_menu_bar(self):
+        menubar = self.menuBar()
+
+        # File Menu
+        file_menu = menubar.addMenu("File")
+
+        open_action = file_menu.addAction("Open Project...")
+        open_action.setShortcut("Ctrl+O")
+        open_action.triggered.connect(self.open_project)
+
+        save_action = file_menu.addAction("Save Project...")
+        save_action.setShortcut("Ctrl+S")
+        save_action.triggered.connect(self.save_project)
+
+        file_menu.addSeparator()
+
+        export_action = file_menu.addAction("Export to PNG...")
+        export_action.setShortcut("Ctrl+E")
+        export_action.triggered.connect(self.save_character)
+
+    def save_project(self):
+        if not self.current_char_data:
+            QMessageBox.warning(self, "Warning", "No character loaded to save.")
+            return
+
+        file_path, _ = QFileDialog.getSaveFileName(
+            self, "Save Project", "", "StorTrooper Project (*.stp *.json)"
+        )
+        if not file_path:
+            return
+
+        active_ids = [article.id for article in self.canvas.active_articles.values()]
+
+        data = {
+            "character_name": self.current_char_data.name,
+            "articles_file": self.current_char_data.articles_filename,
+            "active_articles": active_ids,
+        }
+
+        try:
+            with open(file_path, "w") as f:
+                json.dump(data, f, indent=4)
+            QMessageBox.information(
+                self, "Success", f"Project saved to {os.path.basename(file_path)}"
+            )
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to save project:\n{e}")
+
+    def open_project(self):
+        file_path, _ = QFileDialog.getOpenFileName(
+            self, "Open Project", "", "StorTrooper Project (*.stp *.json)"
+        )
+        if not file_path:
+            return
+
+        try:
+            with open(file_path, "r") as f:
+                data = json.load(f)
+
+            char_name = data.get("character_name")
+            articles_file = data.get("articles_file")
+            active_ids = data.get("active_articles", [])
+
+            if not char_name or not articles_file:
+                raise ValueError("Invalid project file format.")
+
+            # 1. Select Character
+            index = self.char_combo.findText(char_name)
+            if index == -1:
+                QMessageBox.critical(
+                    self, "Error", f"Character '{char_name}' not found."
+                )
+                return
+            self.char_combo.setCurrentIndex(index)
+
+            # 2. Select Articles File
+            # Note: Changing char_combo triggers on_character_changed which populates articles_combo
+            # and selects a default. We need to override that.
+            # However, on_character_changed happens immediately if connected.
+            # Let's verify if the article file exists in the combo.
+            index = self.articles_combo.findText(articles_file)
+            if index == -1:
+                QMessageBox.warning(
+                    self,
+                    "Warning",
+                    f"Articles file '{articles_file}' not found. Using default.",
+                )
+            else:
+                self.articles_combo.setCurrentIndex(index)
+
+            # 3. Reload Data (this clears everything)
+            # The setCurrentIndex calls above might have already triggered cleanups/reloads.
+            # To be safe and explicit, let's force a reload if needed, but mainly we want to
+            # apply the active articles *after* the character data is loaded.
+
+            # Since signals are synchronous, self.current_char_data should be updated now.
+            if not self.current_char_data:
+                return
+
+            # 4. Restore Active Articles
+            self.canvas.clear()
+            # Restore body parts if they were not in the list?
+            # Actually, `reload_data` loads a default body.
+            # If the saved project has specific items, we should start fresh or respect them.
+            # The `reload_data` puts a default body.
+            # Let's clear the canvas again to strictly follow the saved project?
+            # OR, does the saved project include the body?
+            # Yes, "body" is just another layer/category.
+            # So if we clear, we must ensure the saved project includes the body.
+            # Assuming the user saved a valid state, it should have a body.
+            self.canvas.clear()
+
+            for art_id in active_ids:
+                article = self.current_char_data.get_article_by_id(art_id)
+                if article:
+                    self.canvas.update_article(article)
+                else:
+                    print(f"Warning: Article ID {art_id} not found.")
+
+            self.update_asset_list_visuals()
+
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to open project:\n{e}")
