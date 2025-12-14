@@ -7,7 +7,7 @@ HCDataSetFile_version
 
 HCDataSetFile_fields
 # unique id, probably the imagename with out the extension, but can be anything as long
-#  as it's constant and unique 
+#  as it's constant and unique
 "0"	"id"
 
 # full image name and path from the articlesImagePath directory specified in the config.txt file
@@ -27,7 +27,7 @@ HCDataSetFile_fields
 "5"	"snapPosY"
 
 # an order number defining in which order the user has placed the articles
-# set to -1 if the user is not wearing 
+# set to -1 if the user is not wearing
 "6" "wearing"
 
 "7" "waldrobe"
@@ -211,4 +211,3 @@ HCDataSetFile_data
 "897" "baby_03.png" "extras" "infront" "17" "65" "-1"
 #"898" "cat_white.png" "extras" "infront" "7" "108" "-1"
 #"899" "computer.png" "extras" "infront" "2" "100" "-1"
-

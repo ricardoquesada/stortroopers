@@ -1,5 +1,5 @@
 #
-# HCApplet config file, all of these name value pairs can be placed in 
+# HCApplet config file, all of these name value pairs can be placed in
 # PARAM tags in the APPLET tag if desired
 #
 ################################################################
@@ -76,11 +76,11 @@ HCDataSetFile_data
 
 
 
-# By setting "noLimits_"+layername to "yes" means that you do not have to 
+# By setting "noLimits_"+layername to "yes" means that you do not have to
 # remove the above layers of clothes before changing this layer (e.g. would
-# be silly to have to remove a jacket to have to change the shoes, or 
+# be silly to have to remove a jacket to have to change the shoes, or
 # visa-versa) Also it means that this layer is not only not effected by
-# other clothes layers, it's does not affect other clothes layers. This 
+# other clothes layers, it's does not affect other clothes layers. This
 # means that where it is in the layer stack only effects the plotting
 # of the article!
 "noLimits_infront"   "yes"
@@ -88,4 +88,3 @@ HCDataSetFile_data
 "noLimits_shoes"     "yes"
 "noLimits_hair"	     "yes"
 "oneItem_body"	     "yes"
-
