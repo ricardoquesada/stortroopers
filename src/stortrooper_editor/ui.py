@@ -96,7 +96,7 @@ class AssetSelector(QListWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setViewMode(QListWidget.IconMode)
-        self.setIconSize(QSize(64, 64))
+        self.setIconSize(QSize(128, 128))
         self.setResizeMode(QListWidget.Adjust)
         self.setSpacing(10)
 
@@ -107,7 +107,7 @@ class MainWindow(QMainWindow):
         self.resize(1000, 700)
         self.res_path = res_path
         self.current_char_data = None
-        self.current_zoom = 3.0
+        self.current_zoom = 4.0
         
         # Central Widget
         central_widget = QWidget()
