@@ -3,8 +3,8 @@
 import json
 import os
 
-from PySide6.QtCore import QRectF, QSize, Qt
-from PySide6.QtGui import QIcon, QImage, QPainter, QPixmap
+from PySide6.QtCore import QRectF, QSettings, QSize, Qt
+from PySide6.QtGui import QAction, QIcon, QImage, QPainter, QPixmap
 from PySide6.QtWidgets import (
     QComboBox,
     QDockWidget,
@@ -44,6 +44,7 @@ class CanvasWidget(QGraphicsView):
         self.active_articles = {}  # layer_name -> Article
         self.pixmap_items = {}  # layer_name -> QGraphicsPixmapItem
         self.current_zoom = 4.0
+        self.project_file_path = None
 
     def set_character(self, character_data: CharacterData):
         self.character_data = character_data
@@ -131,6 +132,9 @@ class MainWindow(QMainWindow):
         self.resize(1200, 800)
         self.res_path = res_path
 
+        # Settings
+        self.settings = QSettings("RicardoQuesada", "StorTrooperEditor")
+
         # Central MDI Area
         self.mdi_area = QMdiArea()
         self.mdi_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
@@ -151,8 +155,34 @@ class MainWindow(QMainWindow):
         # Populate Characters
         self.populate_characters()
 
-        # Create one initial document
-        self.create_new_document()
+        # Restore Session or New Document
+        self.restore_last_session()
+
+    def closeEvent(self, event):
+        # Save open documents to session
+        open_files = []
+        for sub in self.mdi_area.subWindowList():
+            canvas = sub.widget()
+            if isinstance(canvas, CanvasWidget) and canvas.project_file_path:
+                open_files.append(canvas.project_file_path)
+
+        self.settings.setValue("last_session_files", open_files)
+        event.accept()
+
+    def restore_last_session(self):
+        last_files = self.settings.value("last_session_files", [])
+        # QSettings might return None or type conversion quirks, ensure list
+        if not isinstance(last_files, list):
+            last_files = []
+
+        files_opened = 0
+        for file_path in last_files:
+            if os.path.exists(file_path):
+                if self.open_project_file(file_path):
+                    files_opened += 1
+
+        if files_opened == 0:
+            self.create_new_document()
 
     def create_tools_dock(self):
         dock = QDockWidget("Tools", self)
@@ -219,6 +249,10 @@ class MainWindow(QMainWindow):
         open_action.setShortcut("Ctrl+O")
         open_action.triggered.connect(self.open_project)
 
+        # Recent Files
+        self.recent_menu = file_menu.addMenu("Open Recent")
+        self.update_recent_menu()
+
         save_action = file_menu.addAction("Save Project...")
         save_action.setShortcut("Ctrl+S")
         save_action.triggered.connect(self.save_project)
@@ -242,6 +276,43 @@ class MainWindow(QMainWindow):
 
         cascade_action = window_menu.addAction("Cascade")
         cascade_action.triggered.connect(self.mdi_area.cascadeSubWindows)
+
+    def update_recent_menu(self):
+        self.recent_menu.clear()
+        recent_files = self.settings.value("recent_files", [])
+        if not isinstance(recent_files, list):
+            recent_files = []
+
+        for file_path in recent_files:
+            action = QAction(os.path.basename(file_path), self)
+            action.setData(file_path)
+            action.triggered.connect(
+                lambda checked=False, path=file_path: self.open_project_file(path)
+            )
+            self.recent_menu.addAction(action)
+
+        if not recent_files:
+            self.recent_menu.setDisabled(True)
+        else:
+            self.recent_menu.setEnabled(True)
+
+    def add_recent_file(self, file_path):
+        recent_files = self.settings.value("recent_files", [])
+        if not isinstance(recent_files, list):
+            recent_files = []
+
+        # Remove if exists to move to top
+        if file_path in recent_files:
+            recent_files.remove(file_path)
+
+        recent_files.insert(0, file_path)
+
+        # Limit to 10
+        if len(recent_files) > 10:
+            recent_files = recent_files[:10]
+
+        self.settings.setValue("recent_files", recent_files)
+        self.update_recent_menu()
 
     def populate_characters(self):
         if not os.path.exists(self.res_path):
@@ -515,8 +586,10 @@ class MainWindow(QMainWindow):
             QMessageBox.information(
                 self, "Success", f"Project saved to {os.path.basename(file_path)}"
             )
-            # Update window title
+            # Update window title and path
+            canvas.project_file_path = file_path
             self.mdi_area.currentSubWindow().setWindowTitle(os.path.basename(file_path))
+            self.add_recent_file(file_path)
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to save project:\n{e}")
 
@@ -524,9 +597,10 @@ class MainWindow(QMainWindow):
         file_path, _ = QFileDialog.getOpenFileName(
             self, "Open Project", "", "StorTrooper Project (*.stp *.json)"
         )
-        if not file_path:
-            return
+        if file_path:
+            self.open_project_file(file_path)
 
+    def open_project_file(self, file_path):
         try:
             with open(file_path, "r") as f:
                 data = json.load(f)
@@ -542,7 +616,7 @@ class MainWindow(QMainWindow):
             self.create_new_document()
             canvas = self.get_current_canvas()
             if not canvas:
-                return
+                return False
 
             # Manually set character to match file without relying solely on UI
             # But we must update UI too?
@@ -553,7 +627,7 @@ class MainWindow(QMainWindow):
                     self, "Error", f"Character '{char_name}' not found."
                 )
                 self.mdi_area.currentSubWindow().close()
-                return
+                return False
 
             # Setting index triggers on_character_changed -> reload_data -> sets default body
             self.char_combo.setCurrentIndex(idx)
@@ -579,7 +653,13 @@ class MainWindow(QMainWindow):
                     print(f"Warning: Article {art_id} not found")
 
             self.update_asset_list_visuals()
+
+            # Update window and tracking
+            canvas.project_file_path = file_path
             self.mdi_area.currentSubWindow().setWindowTitle(os.path.basename(file_path))
+            self.add_recent_file(file_path)
+            return True
 
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to open project:\n{e}")
+            return False
