@@ -1,6 +1,6 @@
-# Stortrooper Editor
+# Stortroopers Editor
 
-Stortrooper Editor is a pixel art character creator tool. It allows users to compose characters by selecting different body parts (such as body, head, hair, and accessories) from a set of available assets.
+Stortroopers Editor is a pixel art character creator tool. It allows users to compose characters by selecting different body parts (such as body, head, hair, and accessories) from a set of available assets.
 
 ## Features
 
@@ -11,7 +11,7 @@ Stortrooper Editor is a pixel art character creator tool. It allows users to com
 
 ## Screenshot
 
-![Stortrooper Editor Interface](docs/editor_screenshot.png)
+![Stortroopers Editor Interface](docs/editor_screenshot.png)
 
 ## Getting Started
 
