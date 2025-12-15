@@ -65,3 +65,10 @@ If you prefer to run it manually without `make`:
     ```bash
     PYTHONPATH=src python3 -m stortrooper_editor.main
     ```
+
+## License
+
+Graphics: [CC-BY-NC-SA][license] (Attribution-NonCommercial-ShareAlike) from [StorTroopers][stortroopers].
+
+[license]: http://creativecommons.org/licenses/by-nc-sa/2.0/
+[stortroopers]: https://web.archive.org/web/20061126002112/http://www.stortroopers.com/index.html
