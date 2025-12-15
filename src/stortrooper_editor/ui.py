@@ -136,16 +136,14 @@ class MainWindow(QMainWindow):
         # Settings
         self.settings = QSettings("RicardoQuesada", "StorTrooperEditor")
 
-        # Central MDI Area
-        self.mdi_area = QMdiArea()
-        self.mdi_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        self.mdi_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        self.mdi_area.setViewMode(QMdiArea.TabbedView)
-        self.mdi_area.setTabsClosable(True)
-        self.mdi_area.setTabsMovable(True)
-        self.setCentralWidget(self.mdi_area)
-
-        self.mdi_area.subWindowActivated.connect(self.update_ui_from_active_window)
+        # Central Tab Widget
+        self.tab_widget = QTabWidget()
+        self.tab_widget.setDocumentMode(True)
+        self.tab_widget.setTabsClosable(True)
+        self.tab_widget.setMovable(True)
+        self.tab_widget.currentChanged.connect(self.update_ui_from_active_tab)
+        self.tab_widget.tabCloseRequested.connect(self.on_tab_close_requested)
+        self.setCentralWidget(self.tab_widget)
 
         # Dock Widget for Tools
         self.create_tools_dock()
@@ -162,8 +160,8 @@ class MainWindow(QMainWindow):
     def closeEvent(self, event):
         # Save open documents to session
         open_files = []
-        for sub in self.mdi_area.subWindowList():
-            canvas = sub.widget()
+        for i in range(self.tab_widget.count()):
+            canvas = self.tab_widget.widget(i)
             if isinstance(canvas, CanvasWidget) and canvas.project_file_path:
                 open_files.append(canvas.project_file_path)
 
@@ -272,16 +270,9 @@ class MainWindow(QMainWindow):
         # Window Menu
         window_menu = menubar.addMenu("Window")
 
-        close_action = window_menu.addAction("Close Window")
-        close_action.triggered.connect(self.close_active_window)
-
-        window_menu.addSeparator()
-
-        tile_action = window_menu.addAction("Tile")
-        tile_action.triggered.connect(self.mdi_area.tileSubWindows)
-
-        cascade_action = window_menu.addAction("Cascade")
-        cascade_action.triggered.connect(self.mdi_area.cascadeSubWindows)
+        close_action = window_menu.addAction("Close Tab")
+        close_action.setShortcut("Ctrl+W")
+        close_action.triggered.connect(self.close_current_tab)
 
     def update_recent_menu(self):
         self.recent_menu.clear()
@@ -341,34 +332,36 @@ class MainWindow(QMainWindow):
         canvas = CanvasWidget()
         canvas.set_zoom(4.0)
 
-        sub = QMdiSubWindow()
-        sub.setWidget(canvas)
-        sub.setAttribute(Qt.WA_DeleteOnClose)
-        sub.setWindowTitle("Untitled")
-        self.mdi_area.addSubWindow(sub)
-        sub.show()
-
+        index = self.tab_widget.addTab(canvas, "Untitled")
+        self.tab_widget.setCurrentIndex(index)
+        
         # Initialize with current selection if possible
         self.reload_data()
 
-    def close_active_window(self):
-        if self.mdi_area.currentSubWindow():
-            self.mdi_area.currentSubWindow().close()
+    def on_tab_close_requested(self, index):
+        if index >= 0:
+            widget = self.tab_widget.widget(index)
+            # Potentially check for unsaved changes here in the future
+            self.tab_widget.removeTab(index)
+            widget.deleteLater()
+
+    def close_current_tab(self):
+        self.on_tab_close_requested(self.tab_widget.currentIndex())
 
     def get_current_canvas(self):
-        sub = self.mdi_area.currentSubWindow()
-        if sub:
-            return sub.widget()
+        widget = self.tab_widget.currentWidget()
+        if isinstance(widget, CanvasWidget):
+            return widget
         return None
 
-    def update_ui_from_active_window(self, subwindow):
-        if not subwindow:
+    def update_ui_from_active_tab(self, index):
+        if index < 0:
             # Could clear UI or disable properties
             self.asset_list.clear()
             self.category_tabs.clear()
             return
 
-        canvas = subwindow.widget()
+        canvas = self.tab_widget.widget(index)
         if not isinstance(canvas, CanvasWidget):
             return
 
@@ -614,7 +607,7 @@ class MainWindow(QMainWindow):
             )
             # Update window title and path
             canvas.project_file_path = file_path
-            self.mdi_area.currentSubWindow().setWindowTitle(os.path.basename(file_path))
+            self.tab_widget.setTabText(self.tab_widget.currentIndex(), os.path.basename(file_path))
             self.add_recent_file(file_path)
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to save project:\n{e}")
@@ -652,7 +645,7 @@ class MainWindow(QMainWindow):
                 QMessageBox.critical(
                     self, "Error", f"Character '{char_name}' not found."
                 )
-                self.mdi_area.currentSubWindow().close()
+                self.close_current_tab()
                 return False
 
             # Setting index triggers on_character_changed -> reload_data -> sets default body
@@ -682,10 +675,10 @@ class MainWindow(QMainWindow):
 
             # Update window and tracking
             canvas.project_file_path = file_path
-            self.mdi_area.currentSubWindow().setWindowTitle(os.path.basename(file_path))
+            self.tab_widget.setTabText(self.tab_widget.currentIndex(), os.path.basename(file_path))
             self.add_recent_file(file_path)
             return True
 
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to open project:\n{e}")
+            QMessageBox.critical(self, "Error", f"Failed to save project:\n{e}")
             return False
