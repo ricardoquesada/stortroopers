@@ -435,10 +435,6 @@ class MainWindow(QMainWindow):
             self.on_category_changed(idx)
 
     def on_character_changed(self):
-        canvas = self.get_current_canvas()
-        if not canvas:
-            return
-
         char_name = self.char_combo.currentText()
         if not char_name:
             return
@@ -455,6 +451,11 @@ class MainWindow(QMainWindow):
             self.articles_combo.setCurrentIndex(0)
 
         self.articles_combo.blockSignals(False)
+
+        canvas = self.get_current_canvas()
+        if not canvas:
+            return
+
         self.reload_data()
 
     def reload_data(self):
