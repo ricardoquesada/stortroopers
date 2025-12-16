@@ -19,3 +19,11 @@ repos:
     rev: 7.3.0
     hooks:
     -   id: flake8
+-   repo: local
+    hooks:
+    -   id: pytest
+        name: pytest
+        entry: make test
+        language: system
+        pass_filenames: false
+        types: [python]

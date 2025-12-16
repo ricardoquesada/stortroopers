@@ -1,2 +1,5 @@
 PySide6
 pre-commit
+pytest
+pytest-qt
+pytest-mock
