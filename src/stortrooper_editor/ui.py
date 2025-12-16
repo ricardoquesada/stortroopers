@@ -136,7 +136,7 @@ class MainWindow(QMainWindow):
         self.res_path = res_path
 
         # Settings
-        self.settings = QSettings("RicardoQuesada", "StorTrooperEditor")
+        self.settings = QSettings("RetroMoe", "StorTrooperEditor")
 
         # Central Tab Widget
         self.tab_widget = QTabWidget()
@@ -248,7 +248,7 @@ class MainWindow(QMainWindow):
 
         open_action = file_menu.addAction("Open Project...")
         open_action.setShortcut("Ctrl+O")
-        open_action.setIcon(style.standardIcon(QStyle.SP_DialogOpenButton))
+        open_action.setIcon(QIcon.fromTheme("document-open", style.standardIcon(QStyle.SP_DialogOpenButton)))
         open_action.triggered.connect(self.open_project)
         toolbar.addAction(open_action)
 
@@ -259,14 +259,14 @@ class MainWindow(QMainWindow):
         # Save Action
         save_action = file_menu.addAction("Save")
         save_action.setShortcut("Ctrl+S")
-        save_action.setIcon(style.standardIcon(QStyle.SP_DialogSaveButton))
+        save_action.setIcon(QIcon.fromTheme("document-save", style.standardIcon(QStyle.SP_DialogSaveButton)))
         save_action.triggered.connect(self.save_project)
         toolbar.addAction(save_action)
 
         save_as_action = file_menu.addAction("Save As...")
         save_as_action.setShortcut("Ctrl+Shift+S")
         # Reuse save icon for now
-        save_as_action.setIcon(style.standardIcon(QStyle.SP_DialogSaveButton))
+        save_as_action.setIcon(QIcon.fromTheme("document-save-as", style.standardIcon(QStyle.SP_DialogSaveButton)))
         save_as_action.triggered.connect(self.save_project_as)
         toolbar.addAction(save_as_action)
 
@@ -274,13 +274,13 @@ class MainWindow(QMainWindow):
 
         export_action = file_menu.addAction("Export to PNG...")
         export_action.setShortcut("Ctrl+E")
-        export_action.setIcon(style.standardIcon(QStyle.SP_DialogApplyButton))
+        export_action.setIcon(QIcon.fromTheme("document-export", style.standardIcon(QStyle.SP_DialogApplyButton)))
         export_action.triggered.connect(self.save_character)
         toolbar.addAction(export_action)
         
         # Random Action
         random_action = QAction("Random", self)
-        random_action.setIcon(style.standardIcon(QStyle.SP_BrowserReload))
+        random_action.setIcon(QIcon.fromTheme("media-playlist-shuffle", style.standardIcon(QStyle.SP_BrowserReload)))
         random_action.triggered.connect(self.randomize_character)
         toolbar.addAction(random_action)
 
