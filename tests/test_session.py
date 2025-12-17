@@ -75,3 +75,55 @@ def test_session_persistence(qtbot, clean_settings, tmp_path):
         # Also check that ToolsDock has object name
         dock = window.findChild(object, "ToolsDock")
         assert dock is not None, "Tools dock should have objectName 'ToolsDock'"
+
+def test_restore_default_layout(qtbot, clean_settings, tmp_path):
+    """Test that restore default layout resets window, dock, and toolbar."""
+    # Dummy res path
+    res_path = tmp_path / "res"
+    res_path.mkdir()
+    
+    from unittest.mock import patch, MagicMock 
+    # Use patch to avoid reading real settings from disk if we used file-based settings? 
+    # We are using clean_settings fixture which uses a test organization/app anyway.
+    
+    with patch('stortrooper_editor.ui.QSettings') as MockSettings:
+        # Configure mock to return None so restoreGeometry doesn't fail with MagicMock
+        MockSettings.return_value.value.return_value = None
+        
+        window = MainWindow(str(res_path))
+        qtbot.addWidget(window)
+        window.show()
+        qtbot.waitForWindowShown(window)
+        
+        # 1. Hide Toolbar and Move it
+        from PySide6.QtWidgets import QToolBar
+        from PySide6.QtCore import Qt
+        toolbar = window.findChild(QToolBar, "MainToolbar")
+        assert toolbar is not None
+        
+        # Move to Bottom
+        window.removeToolBar(toolbar)
+        window.addToolBar(Qt.BottomToolBarArea, toolbar)
+        assert window.toolBarArea(toolbar) == Qt.BottomToolBarArea
+        
+        toolbar.setVisible(False)
+        assert not toolbar.isVisible()
+        
+        # 2. Move Dock or Hide it
+        dock = window.findChild(object, "ToolsDock")
+        dock.setVisible(False)
+        assert not dock.isVisible()
+        
+        # 3. Restore Defaults
+        window.restore_default_layout()
+        
+        # 4. Verify
+        # Wait for window to be processed if needed, but synchronous call should handle layout
+        assert toolbar.isVisible(), "Toolbar should be visible after restore"
+        assert dock.isVisible(), "Dock should be visible after restore"
+        # Check size if possible, though window manager might affect it
+        assert window.size().width() == 1200
+        assert window.size().height() == 800
+        
+        # Check Toolbar Position
+        assert window.toolBarArea(toolbar) == Qt.TopToolBarArea, "Toolbar should be at Top area"

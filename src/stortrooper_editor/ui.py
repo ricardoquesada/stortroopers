@@ -25,6 +25,7 @@ from PySide6.QtWidgets import (
     QPushButton,
     QStyle,
     QTabWidget,
+    QToolBar,
     QVBoxLayout,
     QWidget,
 )
@@ -208,13 +209,12 @@ class MainWindow(QMainWindow):
             dock.setFloating(False)
             dock.show()
         
-        # Also ensure Toolbar is visible if we want a full reset?
-        toolbar = self.findChild(object, "MainToolbar")
-        # Toolbars are usually QToolBar, but findChild(object...) or findChild(QToolBar...)
-        # Since we didn't import QToolBar, it might fail if we use the type directly without import.
-        # But 'toolbar' variable in create_menu_bar is local.
-        # It's better to rely on QMainWindow's functionality or findChild with string name if specific class not imported.
-        # But we can just leave it as is for now, main request is geometry/dock.
+        if hasattr(self, "main_toolbar") and self.main_toolbar:
+            logging.info("Restoring toolbar visibility and position")
+            self.addToolBar(Qt.TopToolBarArea, self.main_toolbar)
+            self.main_toolbar.setVisible(True)
+            if not self.main_toolbar.toggleViewAction().isChecked():
+                self.main_toolbar.toggleViewAction().trigger()
 
     def create_tools_dock(self):
         dock = QDockWidget("Tools", self)
@@ -268,8 +268,8 @@ class MainWindow(QMainWindow):
 
     def create_menu_bar(self):
         menubar = self.menuBar()
-        toolbar = self.addToolBar("Main Toolbar")
-        toolbar.setObjectName("MainToolbar")
+        self.main_toolbar = self.addToolBar("Main Toolbar")
+        self.main_toolbar.setObjectName("MainToolbar")
         style = self.style()
 
         # File Menu
@@ -283,7 +283,7 @@ class MainWindow(QMainWindow):
         open_action.setShortcut("Ctrl+O")
         open_action.setIcon(QIcon.fromTheme("document-open", style.standardIcon(QStyle.SP_DialogOpenButton)))
         open_action.triggered.connect(self.open_project)
-        toolbar.addAction(open_action)
+        self.main_toolbar.addAction(open_action)
 
         # Recent Files
         self.recent_menu = file_menu.addMenu("Open Recent")
@@ -294,14 +294,14 @@ class MainWindow(QMainWindow):
         save_action.setShortcut("Ctrl+S")
         save_action.setIcon(QIcon.fromTheme("document-save", style.standardIcon(QStyle.SP_DialogSaveButton)))
         save_action.triggered.connect(self.save_project)
-        toolbar.addAction(save_action)
+        self.main_toolbar.addAction(save_action)
 
         save_as_action = file_menu.addAction("Save As...")
         save_as_action.setShortcut("Ctrl+Shift+S")
         # Reuse save icon for now
         save_as_action.setIcon(QIcon.fromTheme("document-save-as", style.standardIcon(QStyle.SP_DialogSaveButton)))
         save_as_action.triggered.connect(self.save_project_as)
-        toolbar.addAction(save_as_action)
+        self.main_toolbar.addAction(save_as_action)
 
         file_menu.addSeparator()
 
@@ -309,13 +309,13 @@ class MainWindow(QMainWindow):
         export_action.setShortcut("Ctrl+E")
         export_action.setIcon(QIcon.fromTheme("document-export", style.standardIcon(QStyle.SP_DialogApplyButton)))
         export_action.triggered.connect(self.save_character)
-        toolbar.addAction(export_action)
+        self.main_toolbar.addAction(export_action)
         
         # Random Action
         random_action = QAction("Random", self)
         random_action.setIcon(QIcon.fromTheme("media-playlist-shuffle", style.standardIcon(QStyle.SP_BrowserReload)))
         random_action.triggered.connect(self.randomize_character)
-        toolbar.addAction(random_action)
+        self.main_toolbar.addAction(random_action)
 
         # Window Menu
         window_menu = menubar.addMenu("Window")
