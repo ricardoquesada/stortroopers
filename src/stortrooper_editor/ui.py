@@ -232,7 +232,7 @@ class MainWindow(QMainWindow):
         layout.addLayout(zoom_layout)
 
         dock.setWidget(panel)
-        self.addDockWidget(Qt.LeftDockWidgetArea, dock)
+        self.addDockWidget(Qt.RightDockWidgetArea, dock)
 
     def create_menu_bar(self):
         menubar = self.menuBar()
