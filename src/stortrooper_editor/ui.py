@@ -14,13 +14,11 @@ from PySide6.QtWidgets import (
     QGraphicsPixmapItem,
     QGraphicsScene,
     QGraphicsView,
-    QHBoxLayout,
     QLabel,
     QListWidget,
     QListWidgetItem,
     QMainWindow,
     QMessageBox,
-    QPushButton,
     QScrollArea,
     QStyle,
     QTabWidget,
@@ -320,16 +318,6 @@ class MainWindow(QMainWindow):
         # Keep track of active selectors
         self.category_selectors = []
 
-        # Zoom Controls
-        zoom_layout = QHBoxLayout()
-        zoom_in_btn = QPushButton("Zoom In (+)")
-        zoom_in_btn.clicked.connect(self.zoom_in)
-        zoom_out_btn = QPushButton("Zoom Out (-)")
-        zoom_out_btn.clicked.connect(self.zoom_out)
-        zoom_layout.addWidget(zoom_out_btn)
-        zoom_layout.addWidget(zoom_in_btn)
-        layout.addLayout(zoom_layout)
-
         dock.setWidget(panel)
         self.addDockWidget(Qt.RightDockWidgetArea, dock)
 
@@ -414,6 +402,23 @@ class MainWindow(QMainWindow):
         )
         change_outfit_action.triggered.connect(self.change_outfit)
         self.main_toolbar.addAction(change_outfit_action)
+
+        self.main_toolbar.addSeparator()
+
+        # Zoom Actions
+        zoom_in_action = QAction("Zoom In", self)
+        zoom_in_action.setIcon(
+            QIcon.fromTheme("zoom-in", style.standardIcon(QStyle.SP_ArrowUp))
+        )
+        zoom_in_action.triggered.connect(self.zoom_in)
+        self.main_toolbar.addAction(zoom_in_action)
+
+        zoom_out_action = QAction("Zoom Out", self)
+        zoom_out_action.setIcon(
+            QIcon.fromTheme("zoom-out", style.standardIcon(QStyle.SP_ArrowDown))
+        )
+        zoom_out_action.triggered.connect(self.zoom_out)
+        self.main_toolbar.addAction(zoom_out_action)
 
         # Window Menu
         window_menu = menubar.addMenu("Window")
