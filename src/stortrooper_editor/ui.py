@@ -317,6 +317,13 @@ class MainWindow(QMainWindow):
         random_action.triggered.connect(self.randomize_character)
         self.main_toolbar.addAction(random_action)
 
+        # Change Outfit Action
+        change_outfit_action = QAction("Change Outfit", self)
+        # Using a t-shirt icon or similar if available, or just a generic one
+        change_outfit_action.setIcon(QIcon.fromTheme("applications-accessories", style.standardIcon(QStyle.SP_DesktopIcon)))
+        change_outfit_action.triggered.connect(self.change_outfit)
+        self.main_toolbar.addAction( change_outfit_action)
+
         # Window Menu
         window_menu = menubar.addMenu("Window")
 
@@ -774,6 +781,28 @@ class MainWindow(QMainWindow):
         canvas.clear()
         
         for article in new_outfit:
+            canvas.update_article(article)
+            
+        self.update_asset_list_visuals()
+
+    def change_outfit(self):
+        canvas = self.get_current_canvas()
+        if not canvas or not hasattr(canvas, "character_data"):
+            return
+
+        # Define "Outfit" as everything EXCEPT body and hair.
+        all_categories = list(canvas.character_data.categories.keys())
+        excluded = ["body", "hair", "face", "head"] 
+        target_categories = [c for c in all_categories if c not in excluded]
+        
+        logging.info(f"Change Outfit: All Categories: {all_categories}")
+        logging.info(f"Change Outfit: Target Categories: {target_categories}")
+
+        new_articles = canvas.character_data.get_random_articles_subset(target_categories)
+        
+        # Let's iterate and update.
+        for article in new_articles:
+            logging.info(f"Change Outfit: Updating article {article.image_name} (Cat: {article.category}, Layer: {article.layer_name})")
             canvas.update_article(article)
             
         self.update_asset_list_visuals()

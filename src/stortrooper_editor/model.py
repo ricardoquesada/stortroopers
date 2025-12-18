@@ -141,3 +141,10 @@ class CharacterData:
             if articles:
                 outfit.append(random.choice(articles))
         return outfit
+
+    def get_random_articles_subset(self, target_categories: List[str]) -> List[Article]:
+        articles_to_wear = []
+        for category in target_categories:
+            if category in self.categories and self.categories[category]:
+                articles_to_wear.append(random.choice(self.categories[category]))
+        return articles_to_wear
