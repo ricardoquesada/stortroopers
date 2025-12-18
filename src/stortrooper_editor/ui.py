@@ -24,6 +24,7 @@ from PySide6.QtWidgets import (
     QScrollArea,
     QStyle,
     QTabWidget,
+    QToolButton,
     QVBoxLayout,
     QWidget,
 )
@@ -47,6 +48,13 @@ class CanvasWidget(QGraphicsView):
         self.pixmap_items = {}  # layer_name -> QGraphicsPixmapItem
         self.current_zoom = 4.0
         self.project_file_path = None
+        self.category_states = {}  # category_name -> bool (expanded)
+
+    def get_category_expanded(self, category_name: str) -> bool:
+        return self.category_states.get(category_name, True)  # Default to expanded
+
+    def set_category_expanded(self, category_name: str, expanded: bool):
+        self.category_states[category_name] = expanded
 
     def set_character(self, character_data: CharacterData):
         self.character_data = character_data
@@ -116,6 +124,41 @@ class CanvasWidget(QGraphicsView):
         painter.end()
 
         image.save(file_path)
+
+
+class CollapsibleBox(QWidget):
+    def __init__(self, title="", parent=None):
+        super().__init__(parent)
+
+        self.toggle_button = QToolButton(text=title, checkable=True, checked=True)
+        self.toggle_button.setStyleSheet(
+            "QToolButton { border: none; font-weight: bold; }"
+        )
+        self.toggle_button.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        self.toggle_button.setArrowType(Qt.DownArrow)
+        self.toggle_button.toggled.connect(self.on_toggled)
+
+        self.content_area = QWidget()
+        self.content_layout = QVBoxLayout(self.content_area)
+        self.content_layout.setContentsMargins(0, 0, 0, 0)
+        self.content_layout.setSpacing(0)
+
+        lay = QVBoxLayout(self)
+        lay.setSpacing(0)
+        lay.setContentsMargins(0, 0, 0, 0)
+        lay.addWidget(self.toggle_button)
+        lay.addWidget(self.content_area)
+
+        # Force initial state sync
+        self.on_toggled(self.toggle_button.isChecked())
+
+    def on_toggled(self, checked):
+        # Checked = Expanded
+        self.toggle_button.setArrowType(Qt.DownArrow if checked else Qt.RightArrow)
+        self.content_area.setVisible(checked)
+
+    def set_content(self, widget):
+        self.content_layout.addWidget(widget)
 
 
 class AssetSelector(QListWidget):
@@ -520,10 +563,21 @@ class MainWindow(QMainWindow):
             categories.insert(0, categories.pop(categories.index("body")))
 
         for cat_name in categories:
-            # Header
-            label = QLabel(cat_name.title())  # Capitalize like "Body", "Hats"
-            label.setStyleSheet("font-weight: bold; margin-top: 10px;")
-            self.assets_layout.addWidget(label)
+            # Collapsible Group
+            box = CollapsibleBox(cat_name.title())
+
+            # Load persistence state
+            is_expanded = canvas.get_category_expanded(cat_name)
+            box.toggle_button.setChecked(is_expanded)
+            box.on_toggled(is_expanded)  # Force visual update
+
+            # Save state on toggle
+            # Use default arg to capture cat_name by value
+            box.toggle_button.toggled.connect(
+                lambda checked, name=cat_name: canvas.set_category_expanded(
+                    name, checked
+                )
+            )
 
             # Selector
             selector = AssetSelector()
@@ -538,8 +592,10 @@ class MainWindow(QMainWindow):
                 item.setData(Qt.UserRole, article)
                 selector.addItem(item)
 
-            selector.on_items_changed()  # Trigger resize
-            self.assets_layout.addWidget(selector)
+            selector.on_items_changed()
+
+            box.set_content(selector)
+            self.assets_layout.addWidget(box)
             self.category_selectors.append(selector)
 
         # Add stretch at end to push up
