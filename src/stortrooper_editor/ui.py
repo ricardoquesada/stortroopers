@@ -405,11 +405,17 @@ class MainWindow(QMainWindow):
 
         self.main_toolbar.addSeparator()
 
+        # Edit Menu
+        edit_menu = menubar.addMenu("Edit")
+        edit_menu.addAction(random_action)
+        edit_menu.addAction(change_outfit_action)
+
         # Zoom Actions
         zoom_in_action = QAction("Zoom In", self)
         zoom_in_action.setIcon(
             QIcon.fromTheme("zoom-in", style.standardIcon(QStyle.SP_ArrowUp))
         )
+        zoom_in_action.setShortcut("Ctrl++")
         zoom_in_action.triggered.connect(self.zoom_in)
         self.main_toolbar.addAction(zoom_in_action)
 
@@ -417,8 +423,14 @@ class MainWindow(QMainWindow):
         zoom_out_action.setIcon(
             QIcon.fromTheme("zoom-out", style.standardIcon(QStyle.SP_ArrowDown))
         )
+        zoom_out_action.setShortcut("Ctrl+-")
         zoom_out_action.triggered.connect(self.zoom_out)
         self.main_toolbar.addAction(zoom_out_action)
+
+        # View Menu
+        view_menu = menubar.addMenu("View")
+        view_menu.addAction(zoom_in_action)
+        view_menu.addAction(zoom_out_action)
 
         # Window Menu
         window_menu = menubar.addMenu("Window")
